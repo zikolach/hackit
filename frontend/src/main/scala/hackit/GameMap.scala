@@ -1,6 +1,7 @@
 package hackit
 
 import org.scalajs.dom.document._
+import org.scalajs.dom.window
 import org.scalajs.dom.raw.{HTMLCanvasElement, HTMLDivElement, HTMLImageElement, MouseEvent}
 
 import scala.language.postfixOps
@@ -122,6 +123,8 @@ case class GameMap(canvas: HTMLCanvasElement, width: Int, height: Int) {
 
   def render(millis: Double): Unit = {
     val ctx = canvas.getContext("2d")
+    ctx.canvas.width  = window.innerWidth
+    ctx.canvas.height = window.innerHeight
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     drawTerrain(ctx)
     drawScoreboard(ctx)

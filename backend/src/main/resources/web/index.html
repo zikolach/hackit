@@ -4,13 +4,18 @@
         canvas {
             border: 1px solid black;
         }
-        td {
-            vertical-align: top;
+
+        div.tiles {
+            display: none;
+        }
+
+        canvas#main {
         }
     </style>
 </head>
 <body>
-<h1>Hi</h1>
+<canvas id="main" width="640" height="480"></canvas>
+<div id="tiles"></div>
 <script type="text/javascript" src="frontend-fastopt.js"></script>
 <script type="text/javascript" src="frontend-launcher.js"></script>
 </body>

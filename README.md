@@ -25,3 +25,22 @@ This also works on the command line using JVM properties, e.g. using `reStart`:
 ```
 
 will start the server listening on all interfaces.
+
+
+## Game rules
+
+Landscape contains:
+- plains
+- mountains
+- forests
+- seas
+
+PLayers can build on plain ground settlements:
+- villages which brings new resources
+- forts which brings new territory to build
+
+Once a time village bring random resource from surrounding tiles: wood (forest), stone (mountain), food (plain or sea)
+
+Each fort consumes food once a time
+
+

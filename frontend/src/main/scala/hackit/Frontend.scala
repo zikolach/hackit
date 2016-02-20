@@ -1,13 +1,30 @@
 package hackit
 
+import org.scalajs.dom.html.Canvas
+
 import scala.scalajs.concurrent.JSExecutionContext.Implicits
 import scala.scalajs.js
+import org.scalajs.dom.document._
+import org.scalajs.dom.window._
 
 object Frontend extends js.JSApp {
 
-  implicit val ec = Implicits.runNow
+  implicit val ec = Implicits.queue
+
+  val game = new GameMap
+  val requestAnimationFrameSupported = !js.isUndefined(js.Dynamic.global.requestAnimationFrame)
+  val canvas = getElementById("main").asInstanceOf[Canvas]
+  var lastTime: Double = 0
+
+  val gameLoop: Double => Unit = millis => {
+    val dt = if (lastTime == 0) 0.0 else millis - lastTime
+    lastTime = millis
+    game.update(dt)
+    game.render(canvas)(dt)
+    requestAnimationFrame(gameLoop)
+  }
 
   def main(): Unit = {
-    println("hello")
+    gameLoop(0)
   }
 }

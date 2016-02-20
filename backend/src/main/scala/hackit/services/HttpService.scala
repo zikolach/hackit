@@ -15,18 +15,20 @@ class HttpService(implicit system: ActorSystem, materializer: ActorMaterializer)
 
   implicit val timeout: Timeout = 10 seconds
 
-  val route: Route = get {
+  val route: Route =
     pathSingleSlash {
       getFromResource("web/index.html")
     } ~
       path("frontend-launcher.js")(getFromResource("frontend-launcher.js")) ~
-      path("frontend-fastopt.js")(getFromResource("frontend-fastopt.js"))
-  } ~
-    pathPrefix("api") {
-      pathSuffix("status")
-      complete {
-        write(Status("ok"))
+      path("frontend-fastopt.js")(getFromResource("frontend-fastopt.js")) ~
+      getFromResourceDirectory("web") ~
+      pathPrefix("api") {
+        get {
+          pathSuffix("status")
+          complete {
+            write(Status("ok"))
+          }
+        }
       }
-    }
 
 }

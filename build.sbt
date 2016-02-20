@@ -15,8 +15,8 @@ lazy val frontend = (project in file("frontend"))
     persistLauncher in Test := false,
     testFrameworks += new TestFramework("utest.runner.Framework"),
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.8.0",
-      "com.lihaoyi" %%% "upickle" % "0.3.6",
+      "org.scala-js" %%% "scalajs-dom" % "0.9.0",
+      "com.lihaoyi" %%% "upickle" % "0.3.7",
       "com.lihaoyi" %%% "utest" % "0.3.1" % "test"
     )
   )
@@ -29,7 +29,7 @@ lazy val backend = (project in file("backend"))
     libraryDependencies ++= {
       val akkaVersion = "2.4.1"
       val akkaStreamVersion = "2.0.1"
-      val upickleVersion: String = "0.3.6"
+      val upickleVersion = "0.3.7"
       val specs2Version = "3.6.6"
       Seq(
         "com.typesafe.akka" %% "akka-actor" % akkaVersion,

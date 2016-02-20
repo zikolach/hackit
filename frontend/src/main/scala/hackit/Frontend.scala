@@ -11,16 +11,20 @@ object Frontend extends js.JSApp {
 
   implicit val ec = Implicits.queue
 
-  val game = new GameMap
+  case class PlayerStats(color: String, villages: Seq[(Int, Int)], forts: Seq[(Int, Int)])
+
+  case class GameStats(turn: Int = 0, players: Seq[PlayerStats])
+
   val requestAnimationFrameSupported = !js.isUndefined(js.Dynamic.global.requestAnimationFrame)
   val canvas = getElementById("main").asInstanceOf[Canvas]
   var lastTime: Double = 0
+  val game = new GameMap(canvas, 50, 50)
 
   val gameLoop: Double => Unit = millis => {
     val dt = if (lastTime == 0) 0.0 else millis - lastTime
     lastTime = millis
     game.update(dt)
-    game.render(canvas)(dt)
+    game.render(dt)
     requestAnimationFrame(gameLoop)
   }
 

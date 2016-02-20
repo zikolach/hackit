@@ -27,8 +27,8 @@ lazy val backend = (project in file("backend"))
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= {
-      val akkaVersion = "2.4.1"
-      val akkaStreamVersion = "2.0.1"
+      val akkaVersion = "2.4.2"
+      val akkaStreamVersion = "2.0.3"
       val upickleVersion = "0.3.7"
       val specs2Version = "3.6.6"
       Seq(

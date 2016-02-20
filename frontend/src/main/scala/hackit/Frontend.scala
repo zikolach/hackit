@@ -11,10 +11,6 @@ object Frontend extends js.JSApp {
 
   implicit val ec = Implicits.queue
 
-  case class PlayerStats(color: String, villages: Seq[(Int, Int)], forts: Seq[(Int, Int)])
-
-  case class GameStats(turn: Int = 0, players: Seq[PlayerStats])
-
   val requestAnimationFrameSupported = !js.isUndefined(js.Dynamic.global.requestAnimationFrame)
   val canvas = getElementById("main").asInstanceOf[Canvas]
   var lastTime: Double = 0

@@ -1,5 +1,16 @@
 # Hackit Template
 
+## TL;DR
+
+```
+git clone https://github.com/zikolach/hackit.git && \
+cd hackit && \
+git checkout global-hackathon-2016 && \
+sbt "; project backend; ~reStart"                 
+```
+
+## Getting started
+
 To run:
 
 ```

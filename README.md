@@ -46,12 +46,17 @@ Landscape contains:
 - forests
 - seas
 
-PLayers can build on plain ground settlements:
-- villages which brings new resources
-- forts which brings new territory to build
+Each turn pLayers can build on plain ground settlements:
+- villages which brings new resources (build cost 5 wood)
+- TODO: forts which brings new territory to build (build cost 5 stones)
+- or skip turn (TODO)
 
-Once a time village bring random resource from surrounding tiles: wood (forest), stone (mountain), food (plain or sea)
+Once a time village bring resources from surrounding tiles: wood (forest), stone (mountain), food (sea)
 
 Each fort consumes food once a time
 
+Fort open territory to expand (2 hexes each direction).
 
+TODO: Territory which is under control of 2+ enemy forts cannot bring resources.
+
+...

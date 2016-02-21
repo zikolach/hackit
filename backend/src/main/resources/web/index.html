@@ -8,13 +8,67 @@
             overflow: hidden;
         }
 
+        body {
+            background-image: url(/img/menu.jpg);
+            background-repeat: no-repeat;
+            background-position: 0 0;
+            background-size: cover;
+        }
+
         canvas {
             border: 1px solid black;
             margin: 0;
         }
 
-        div.tiles {
-            display: none;
+        div#main-menu {
+            margin:auto;
+            position:absolute;
+            top: 50%;
+            left: 50%;
+            width:30em;
+            height:18em;
+            margin-top: -9em; /*set to a negative number 1/2 of your height*/
+            margin-left: -15em; /*set to a negative number 1/2 of your width*/
+            border: 1px solid #ccc;
+            background-color: rgba(255,255,255,0.5);
+        }
+
+        div#game-list {
+            font-size: x-large;
+            overflow-x: hidden;
+            overflow-y: scroll;
+            background: rgba(255,255,255,0.1);
+            margin: 10% 10% 5% 10%;
+            max-height: 30%;
+        }
+
+        div#game-list::-webkit-scrollbar {
+            width:30px;
+        }
+        div#game-list::-webkit-scrollbar * {
+            background:transparent;
+        }
+        div#game-list::-webkit-scrollbar-thumb {
+            background:rgba(255,255,255,0.1) !important;
+        }
+
+        div#game-list > div {
+            cursor: hand;
+            width: 100%;
+            text-align: center;
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+        }
+
+        div#start {
+            margin: 5% 10% 5% 10%;
+            width: 80%;
+            font-size: x-large;
+            cursor: hand;
+            text-align: center;
+            padding-top: 0.5em;
+            padding-bottom: 0.5em;
+            background:rgba(255,255,255,0.1) !important;
         }
 
         canvas#main {

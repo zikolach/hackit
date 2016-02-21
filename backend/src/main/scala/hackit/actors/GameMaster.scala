@@ -1,7 +1,7 @@
 package hackit.actors
 
 import akka.actor.{ActorRef, Actor, Props}
-import hackit.actors.GameMaster.{GameUpdate, GameConnected, ListGames}
+import hackit.actors.GameMaster.{GameDisconnected, GameUpdate, GameConnected, ListGames}
 import hackit.commands.{GameNotFound, JoinGame, CreateGame}
 import hackit._
 import hackit.rules.Rules
@@ -43,6 +43,8 @@ class GameMaster extends Actor {
           }
         case _ =>
       }
+
+    case GameDisconnected(ip) =>
 
     case GameUpdate(ip, BuildVillage(gameId, playerName, x, y)) =>
       games.get(gameId) match {

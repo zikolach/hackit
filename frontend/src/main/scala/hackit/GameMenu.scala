@@ -17,8 +17,8 @@ class GameMenu {
   var onCreateHandlerOpt: Option[() => Unit] = None
   var onJoinHandlerOpt: Option[String => Unit] = None
 
-  val btn = document.createElement("button").asInstanceOf[HTMLButtonElement]
-  btn.innerHTML = "Start"
+  val btn = document.createElement("div").asInstanceOf[HTMLDivElement]
+  btn.innerHTML = "Start new game"
   btn.id = "start"
   btn.onclick = (e: MouseEvent) => {
     onCreateHandlerOpt.foreach(_ ())
@@ -51,13 +51,11 @@ class GameMenu {
         .getOrElse({
           val newItem = document.createElement("div").asInstanceOf[HTMLDivElement]
           newItem.id = game.id
-          newItem.innerHTML = game.id
+          newItem.innerHTML = s"Join ${game.id}..."
           gameList.insertBefore(newItem, gameList.firstChild)
-          val joinButton = document.createElement("button").asInstanceOf[HTMLButtonElement]
-          joinButton.onclick = (e: MouseEvent) => {
+          newItem.onclick = (e: MouseEvent) => {
             onJoinHandlerOpt.foreach(_ (game.id))
           }
-          newItem.appendChild(joinButton)
           newItem
         })
     }

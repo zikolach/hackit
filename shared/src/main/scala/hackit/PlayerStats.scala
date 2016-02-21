@@ -1,6 +1,7 @@
 package hackit
 
 case class PlayerStats(playerName: String,
+                       color: String = "#FFFFFF",
                        villages: Seq[(Int, Int)],
                        forts: Seq[(Int, Int)],
                        madeHisTurn: Boolean = false,

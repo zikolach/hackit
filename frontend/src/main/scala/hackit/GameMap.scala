@@ -171,6 +171,14 @@ case class GameMap(game: GameDesc, playerName: String, canvas: HTMLCanvasElement
     gameStats.players.foreach { player =>
       player.villages.foreach { villagePos =>
         val pos = calcOffset(villagePos)
+
+        val color = ctx.fillStyle
+        ctx.beginPath()
+        ctx.arc(pos._1 + tileHalfWidth, pos._2 + tileHalfHeight, tileHalfHeight, 0, 2 * Math.PI)
+        ctx.fillStyle = player.color
+        ctx.fill()
+        ctx.fillStyle = color
+
         ctx.drawImage(village, pos._1, pos._2)
       }
     }

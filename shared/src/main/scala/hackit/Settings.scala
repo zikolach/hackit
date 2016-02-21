@@ -17,4 +17,11 @@ object Settings {
       kind = terrainNames(Random.nextInt(terrainNames.size))
     } yield MapCell(x, y, kind)
   }
+
+  def randomColor = {
+    val red = (Random.nextInt(256) + 255) / 2
+    val green = (Random.nextInt(256) + 255) / 2
+    val blue = (Random.nextInt(256) + 255) / 2
+    s"#${Integer.toHexString(red)}${Integer.toHexString(green)}${Integer.toHexString(blue)}"
+  }
 }

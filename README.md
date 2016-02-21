@@ -1,5 +1,7 @@
 # Hackit Template
 
+![screenshot](screenshot.png)
+
 ## TL;DR
 
 ```

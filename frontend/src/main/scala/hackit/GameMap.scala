@@ -19,7 +19,8 @@ case class GameMap(game: GameDesc, playerName: String, canvas: HTMLCanvasElement
     val ws: WebSocket = new WebSocket(s"$wsProtocol://${dom.document.location.host}/api/updates/${game.id}")
   }
 
-  var gameStats = GameStats(Random.alphanumeric.take(10).mkString, 0, Seq(PlayerStats("red", Seq.empty, Seq.empty)))
+  var gameStats = GameStats(game.id, 0, Seq.empty)
+
 
   private val (tileHalfWidth, tileHalfHeight) = (tileSize._1 / 2, tileSize._2 / 2)
 
@@ -99,25 +100,30 @@ case class GameMap(game: GameDesc, playerName: String, canvas: HTMLCanvasElement
 
 
   def drawScoreboard(ctx: Dynamic): Unit = {
-    val centerX = canvas.width / 2
-    val panelW = 296
-    val panelH = 137
-    ctx.drawImage(board, centerX - panelW / 2, 0)
-    Seq(food, wood, stone).zipWithIndex.foreach { case (img, index) =>
-      val x = centerX - (64 * 3) / 2 + index * 64
-      val y = 32
-      ctx.drawImage(img, x, y)
-      ctx.beginPath()
-      ctx.arc(x + 48, y + 48, 12, 0, 2 * Math.PI)
-      ctx.fill()
-      val fillStyle = ctx.fillStyle
-      ctx.fillStyle = "#FFFFFF"
-      ctx.textAlign = "center"
-      ctx.textBaseline = "middle"
-      ctx.font = "15px Arial"
-      ctx.fillText("99", x + 48, y + 48)
-      ctx.fillStyle = fillStyle
+    gameStats.players.find(_.playerName == playerName).foreach { playerStats =>
+      val centerX = canvas.width / 2
+      val panelW = 296
+      val panelH = 137
+      ctx.drawImage(board, centerX - panelW / 2, 0)
+      Seq(food, wood, stone)
+        .zip(Seq(playerStats.food, playerStats.wood, playerStats.stone))
+        .zipWithIndex.foreach { case ((img, value), index) =>
+        val x = centerX - (64 * 3) / 2 + index * 64
+        val y = 32
+        ctx.drawImage(img, x, y)
+        ctx.beginPath()
+        ctx.arc(x + 48, y + 48, 12, 0, 2 * Math.PI)
+        ctx.fill()
+        val fillStyle = ctx.fillStyle
+        ctx.fillStyle = "#FFFFFF"
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        ctx.font = "15px Arial"
+        ctx.fillText(value.toString, x + 48, y + 48)
+        ctx.fillStyle = fillStyle
+      }
     }
+
 
   }
 
@@ -176,10 +182,12 @@ case class GameMap(game: GameDesc, playerName: String, canvas: HTMLCanvasElement
     case GameMapUpdate(cells) =>
       terrains = cells.map(mc => (mc.x, mc.y) -> mc.terrain).toMap
       println("map updated")
-    case VillageBuilt(x, y) =>
-      gameStats = gameStats.copy(players = gameStats.players.map(player => {
-        player.copy(villages = player.villages :+(x, y))
-      }))
+    case PlayerStatsUpdate(playerStats) =>
+      val players = gameStats.players.span(_.playerName == playerStats.playerName) match {
+        case (_, others) => others :+ playerStats
+      }
+      gameStats = gameStats.copy(players = players)
+      println(s"player ${gameStats.players} stats update")
     case packet => println(packet)
   }
 }

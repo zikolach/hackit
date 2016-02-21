@@ -4,6 +4,7 @@ import akka.actor.{ActorRef, Actor, Props}
 import hackit.actors.GameMaster.{GameUpdate, GameConnected, ListGames}
 import hackit.commands.{GameNotFound, JoinGame, CreateGame}
 import hackit._
+import hackit.rules.Rules
 
 class GameMaster extends Actor {
 
@@ -11,6 +12,7 @@ class GameMaster extends Actor {
   var subscribers: Map[String, Seq[ActorRef]] = Map.empty
 
   import Settings._
+  import Rules._
 
   def receive: Receive = {
     case ListGames =>
@@ -31,22 +33,29 @@ class GameMaster extends Actor {
       }
     case GameConnected(gameId, ip, subscriber) =>
       games.get(gameId) match {
-        case Some((_, cells)) =>
+        case Some((stats, cells)) =>
           subscribers = subscribers.updated(gameId, subscribers(gameId) :+ subscriber)
           subscriber ! GameMapUpdate(cells)
+          stats.players.foreach { playerStats =>
+            subscribers(gameId).foreach {
+              _ ! PlayerStatsUpdate(playerStats)
+            }
+          }
         case _ =>
       }
     case GameUpdate(ip, BuildVillage(gameId, playerName, x, y)) =>
       games.get(gameId) match {
         case Some((game, cells)) =>
-          games = games.updated(gameId, (game.copy(players = game.players.map {
-            case player if player.playerName == playerName => player.copy(villages = player.villages :+(x, y))
-            case player => player
-          }), cells))
-          subscribers(gameId).foreach {
-            _ ! VillageBuilt(x, y)
+          if (canBuildVillage(game, playerName)) {
+            val gameStats = buildVillage(game, playerName, x, y)
+            games = games.updated(gameId, (gameStats, cells))
+            gameStats.players.find(_.playerName == playerName).foreach { playerStats =>
+              subscribers(gameId).foreach {
+                _ ! PlayerStatsUpdate(playerStats)
+              }
+            }
+            println(s"Build village at $x:$y")
           }
-          println(s"Build village at $x:$y")
         case _ =>
       }
 

@@ -70,7 +70,7 @@ class HttpService(implicit system: ActorSystem, materializer: ActorMaterializer)
             } ~
             path("updates" / Segment) { gameId =>
               val in = Flow[GameMessage].to(Sink.actorRef[GameMessage](gameMaster, GameDisconnected(clientIP.toString())))
-              val out = Source.actorRef[Packet](1, OverflowStrategy.fail)
+              val out = Source.actorRef[Packet](10, OverflowStrategy.fail)
                 .mapMaterializedValue(gameMaster ! GameConnected(gameId, clientIP.toString(), _))
               handleWebsocketMessages(Flow[Message]
                 .collect { case TextMessage.Strict(msg) => GameUpdate(clientIP.toString(), read[Packet](msg)) }

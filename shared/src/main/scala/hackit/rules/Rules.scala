@@ -24,7 +24,7 @@ object Rules {
     player.villages.flatMap(village => {
       val villageNeighbours: Seq[String] = neighbourTerrains(game.terrain, village)
       villageNeighbours map {
-        case "grass" => (1, 0, 0)
+        case "grass" => (0, 0, 0)
         case "tree" => (0, 1, 0)
         case "sea" => (1, 0, 0)
         case "mountain" => (0, 0, 1)

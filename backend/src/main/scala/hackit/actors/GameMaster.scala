@@ -6,6 +6,8 @@ import hackit.commands.{GameNotFound, JoinGame, CreateGame}
 import hackit._
 import hackit.rules.Rules
 
+import scala.util.Random
+
 class GameMaster extends Actor {
 
   var games: Map[String, GameStats] = Map.empty
@@ -14,18 +16,20 @@ class GameMaster extends Actor {
   import Settings._
   import Rules._
 
+  Random.setSeed(System.currentTimeMillis())
+
   def receive: Receive = {
     case ListGames =>
       sender ! GameList(games.values.map({ case game => GameDesc(game.id, game.toString) }).toSeq)
     case CreateGame(id, playerName) =>
-      val gameStats = GameStats(id, 0, Seq(PlayerStats(playerName, Settings.randomColor, Seq.empty, Seq.empty)), generateTerrain(10, 10))
+      val gameStats = GameStats(id, 0, Seq(PlayerStats(playerName, Settings.randomColor(), Seq.empty, Seq.empty)), generateTerrain(10, 10))
       games = games + (id ->gameStats)
       subscribers = subscribers.updated(id, Seq.empty)
       sender ! GameDesc(gameStats.id, gameStats.toString)
     case JoinGame(id, playerName) =>
       games.get(id) match {
         case Some(gameStats) =>
-          val newStats = gameStats.copy(players = gameStats.players :+ PlayerStats(playerName, Settings.randomColor, Seq.empty, Seq.empty))
+          val newStats = gameStats.copy(players = gameStats.players :+ PlayerStats(playerName, Settings.randomColor(), Seq.empty, Seq.empty))
           games = games.updated(id, newStats)
           sender ! GameDesc(id, newStats.toString)
         case None =>

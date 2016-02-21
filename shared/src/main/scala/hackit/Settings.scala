@@ -18,10 +18,10 @@ object Settings {
     } yield MapCell(x, y, kind)
   }
 
-  def randomColor = {
-    val red = (Random.nextInt(256) + 255) / 2
-    val green = (Random.nextInt(256) + 255) / 2
-    val blue = (Random.nextInt(256) + 255) / 2
+  def randomColor(mix: (Int, Int, Int) = (200, 200, 200)) = {
+    val red = (Random.nextInt(256) + mix._1) / 2
+    val green = (Random.nextInt(256) + mix._2) / 2
+    val blue = (Random.nextInt(256) + mix._3) / 2
     s"#${Integer.toHexString(red)}${Integer.toHexString(green)}${Integer.toHexString(blue)}"
   }
 }

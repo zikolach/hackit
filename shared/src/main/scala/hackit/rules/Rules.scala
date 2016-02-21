@@ -15,7 +15,6 @@ object Rules {
   def canBuildVillage(game: GameStats, x: Int, y: Int, playerName: String): Boolean =
     game.players.exists { player =>
       val haveResources=player.playerName == playerName && player.wood > 0
-      println(game.terrain)
       val terrainCheck = game.terrain.exists(tile => tile.x == x && tile.y == y && tile.terrain == "grass")
       haveResources && terrainCheck
     }

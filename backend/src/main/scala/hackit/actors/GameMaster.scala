@@ -43,18 +43,18 @@ class GameMaster extends Actor {
           }
         case _ =>
       }
+
     case GameUpdate(ip, BuildVillage(gameId, playerName, x, y)) =>
       games.get(gameId) match {
         case Some(game) =>
           if (canBuildVillage(game, x, y, playerName)) {
-            val gameStats = buildVillage(game, playerName, x, y)
+            val gameStats = makeTurn(buildVillage(game, playerName, x, y))
             games = games.updated(gameId, gameStats)
-            gameStats.players.find(_.playerName == playerName).foreach { playerStats =>
+            gameStats.players.foreach { playerStats =>
               subscribers(gameId).foreach {
                 _ ! PlayerStatsUpdate(playerStats)
               }
             }
-            println(s"Build village at $x:$y")
           }
         case _ =>
       }

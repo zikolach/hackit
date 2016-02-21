@@ -8,7 +8,7 @@ import hackit.rules.Rules
 
 class GameMaster extends Actor {
 
-  var games: Map[String, (GameStats, Seq[MapCell])] = Map.empty
+  var games: Map[String, GameStats] = Map.empty
   var subscribers: Map[String, Seq[ActorRef]] = Map.empty
 
   import Settings._
@@ -16,26 +16,26 @@ class GameMaster extends Actor {
 
   def receive: Receive = {
     case ListGames =>
-      sender ! GameList(games.values.map({ case (game, _) => GameDesc(game.id, game.toString) }).toSeq)
+      sender ! GameList(games.values.map({ case game => GameDesc(game.id, game.toString) }).toSeq)
     case CreateGame(id, playerName) =>
-      val gameStats = GameStats(id, 0, Seq(PlayerStats(playerName, Seq.empty, Seq.empty)))
-      games = games + (id ->(gameStats, generateTerrain(10, 10)))
+      val gameStats = GameStats(id, 0, Seq(PlayerStats(playerName, Seq.empty, Seq.empty)), generateTerrain(10, 10))
+      games = games + (id ->gameStats)
       subscribers = subscribers.updated(id, Seq.empty)
       sender ! GameDesc(gameStats.id, gameStats.toString)
     case JoinGame(id, playerName) =>
       games.get(id) match {
-        case Some((gameStats, cells)) =>
+        case Some(gameStats) =>
           val newStats = gameStats.copy(players = gameStats.players :+ PlayerStats(playerName, Seq.empty, Seq.empty))
-          games = games.updated(id, (newStats, cells))
+          games = games.updated(id, newStats)
           sender ! GameDesc(id, newStats.toString)
         case None =>
           sender ! GameNotFound
       }
     case GameConnected(gameId, ip, subscriber) =>
       games.get(gameId) match {
-        case Some((stats, cells)) =>
+        case Some(stats) =>
           subscribers = subscribers.updated(gameId, subscribers(gameId) :+ subscriber)
-          subscriber ! GameMapUpdate(cells)
+          subscriber ! GameMapUpdate(stats.terrain)
           stats.players.foreach { playerStats =>
             subscribers(gameId).foreach {
               _ ! PlayerStatsUpdate(playerStats)
@@ -45,10 +45,10 @@ class GameMaster extends Actor {
       }
     case GameUpdate(ip, BuildVillage(gameId, playerName, x, y)) =>
       games.get(gameId) match {
-        case Some((game, cells)) =>
-          if (canBuildVillage(game, playerName)) {
+        case Some(game) =>
+          if (canBuildVillage(game, x, y, playerName)) {
             val gameStats = buildVillage(game, playerName, x, y)
-            games = games.updated(gameId, (gameStats, cells))
+            games = games.updated(gameId, gameStats)
             gameStats.players.find(_.playerName == playerName).foreach { playerStats =>
               subscribers(gameId).foreach {
                 _ ! PlayerStatsUpdate(playerStats)

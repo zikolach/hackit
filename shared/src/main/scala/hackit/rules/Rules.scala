@@ -1,6 +1,6 @@
 package hackit.rules
 
-import hackit.GameStats
+import hackit.{MapCell, GameStats}
 
 object Rules {
 
@@ -12,13 +12,16 @@ object Rules {
     game
   }
 
-  def canBuildVillage(game: GameStats, playerName: String): Boolean =
+  def canBuildVillage(game: GameStats, x: Int, y: Int, playerName: String): Boolean =
     game.players.exists { player =>
-      player.playerName == playerName && player.wood > 0
+      val haveResources=player.playerName == playerName && player.wood > 0
+      println(game.terrain)
+      val terrainCheck = game.terrain.exists(tile => tile.x == x && tile.y == y && tile.terrain == "grass")
+      haveResources && terrainCheck
     }
 
   def buildVillage(game: GameStats, playerName: String, x: Int, y: Int): GameStats =
-    if (canBuildVillage(game, playerName))
+    if (canBuildVillage(game, x, y, playerName))
       game.copy(players = game.players.map { player =>
         if (player.playerName == playerName)
           player.copy(villages = player.villages :+(x, y), wood = player.wood - 1)
@@ -26,6 +29,7 @@ object Rules {
           player
       })
     else game
+
 
 
 }

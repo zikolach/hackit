@@ -58,7 +58,7 @@ case class GameMap(game: GameDesc, playerName: String, canvas: HTMLCanvasElement
     img
   }
 
-  var terrains: Map[(Int, Int), String] = Map.empty
+//  var terrains: Map[(Int, Int), String] = Map.empty
 
   var highlightedTile: Option[(Int, Int)] = None
 
@@ -66,6 +66,10 @@ case class GameMap(game: GameDesc, playerName: String, canvas: HTMLCanvasElement
 
   canvas.onmousedown = (e: MouseEvent) => {
     mouseDown = Some((e.timeStamp, e.clientX.toInt, e.clientY.toInt))
+  }
+
+  def withinBounds(pos: (Int, Int)): Boolean = {
+    pos._1 >= 0 && pos._1 < width && pos._2 >= 0 && pos._2 < height
   }
 
   canvas.onmousemove = (e: MouseEvent) => {
@@ -77,8 +81,11 @@ case class GameMap(game: GameDesc, playerName: String, canvas: HTMLCanvasElement
       case _ =>
     }
     val tilePos = calcHex((e.clientX.toInt, e.clientY.toInt))
-    highlightedTile = Some(tilePos)
-    //    println(highlightedTile)
+    if (withinBounds(tilePos)) {
+      highlightedTile = Some(tilePos)
+    } else {
+      highlightedTile = None
+    }
   }
 
   canvas.onmouseup = (e: MouseEvent) => {
@@ -86,11 +93,9 @@ case class GameMap(game: GameDesc, playerName: String, canvas: HTMLCanvasElement
       case Some((timeStamp, x, y)) if e.timeStamp - timeStamp < 500 && e.clientX - x < 5 && e.clientY - y < 5 =>
         //        println(s"click ${e.clientX}:${e.clientY}")
         val pos = calcHex((e.clientX.toInt, e.clientY.toInt))
-
-        updater.send(BuildVillage(game.id, playerName, pos._1, pos._2))
-      //        gameStats = gameStats.copy(players = gameStats.players.map(player => {
-      //          player.copy(villages = player.villages :+ pos)
-      //        }))
+        if (withinBounds(pos)) {
+          updater.send(BuildVillage(game.id, playerName, pos._1, pos._2))
+        }
       case _ =>
     }
     mouseDown = None
@@ -159,9 +164,9 @@ case class GameMap(game: GameDesc, playerName: String, canvas: HTMLCanvasElement
 
   private def drawTerrain(ctx: Dynamic): Unit = {
     println("render")
-    terrains.foreach { tile =>
-      val pos = calcOffset(tile._1)
-      ctx.drawImage(textures(tile._2), pos._1, pos._2)
+    gameStats.terrain.foreach { tile =>
+      val pos = calcOffset((tile.x, tile.y))
+      ctx.drawImage(textures(tile.terrain), pos._1, pos._2)
     }
     gameStats.players.foreach { player =>
       player.villages.foreach { villagePos =>
@@ -180,7 +185,7 @@ case class GameMap(game: GameDesc, playerName: String, canvas: HTMLCanvasElement
 
   updater.recv {
     case GameMapUpdate(cells) =>
-      terrains = cells.map(mc => (mc.x, mc.y) -> mc.terrain).toMap
+      gameStats = gameStats.copy(terrain = cells)
       println("map updated")
     case PlayerStatsUpdate(playerStats) =>
       val players = gameStats.players.span(_.playerName == playerStats.playerName) match {

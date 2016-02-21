@@ -34,7 +34,7 @@ object Frontend extends js.JSApp {
       c
     }
     var lastTime: Double = 0
-    val game = new GameMap(gameDesc, canvas, 10, 10)
+    val game = new GameMap(gameDesc, playerName, canvas, 10, 10)
 
     def gameLoop(millis: Double): Unit = {
       val dt = if (lastTime == 0) 0.0 else millis - lastTime

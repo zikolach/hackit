@@ -1,5 +1,5 @@
 package hackit
 
-case class PlayerStats(color: String,
+case class PlayerStats(playerName: String,
                        villages: Seq[(Int, Int)],
                        forts: Seq[(Int, Int)])

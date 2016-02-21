@@ -1,13 +1,14 @@
 package hackit.actors
 
 import akka.actor.{ActorRef, Actor, Props}
-import hackit.actors.GameMaster.{GameConnected, ListGames}
+import hackit.actors.GameMaster.{GameUpdate, GameConnected, ListGames}
 import hackit.commands.{GameNotFound, JoinGame, CreateGame}
 import hackit._
 
 class GameMaster extends Actor {
 
   var games: Map[String, (GameStats, Seq[MapCell])] = Map.empty
+  var subscribers: Map[String, Seq[ActorRef]] = Map.empty
 
   import Settings._
 
@@ -17,6 +18,7 @@ class GameMaster extends Actor {
     case CreateGame(id, playerName) =>
       val gameStats = GameStats(id, 0, Seq(PlayerStats(playerName, Seq.empty, Seq.empty)))
       games = games + (id ->(gameStats, generateTerrain(10, 10)))
+      subscribers = subscribers.updated(id, Seq.empty)
       sender ! GameDesc(gameStats.id, gameStats.toString)
     case JoinGame(id, playerName) =>
       games.get(id) match {
@@ -30,9 +32,23 @@ class GameMaster extends Actor {
     case GameConnected(gameId, ip, subscriber) =>
       games.get(gameId) match {
         case Some((_, cells)) =>
+          subscribers = subscribers.updated(gameId, subscribers(gameId) :+ subscriber)
           subscriber ! GameMapUpdate(cells)
+        case _ =>
       }
-
+    case GameUpdate(ip, BuildVillage(gameId, playerName, x, y)) =>
+      games.get(gameId) match {
+        case Some((game, cells)) =>
+          games = games.updated(gameId, (game.copy(players = game.players.map {
+            case player if player.playerName == playerName => player.copy(villages = player.villages :+(x, y))
+            case player => player
+          }), cells))
+          subscribers(gameId).foreach {
+            _ ! VillageBuilt(x, y)
+          }
+          println(s"Build village at $x:$y")
+        case _ =>
+      }
 
   }
 }
@@ -52,6 +68,6 @@ object GameMaster {
 
   case class GameConnected(gameId: String, ip: String, subscriber: ActorRef) extends GameMessage
 
-  case class GameUpdate(packet: Packet) extends GameMessage
+  case class GameUpdate(ip: String, packet: Packet) extends GameMessage
 
 }

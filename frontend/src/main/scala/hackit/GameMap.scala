@@ -9,7 +9,7 @@ import scala.language.postfixOps
 import scala.scalajs.js.Dynamic
 import scala.util.Random
 
-case class GameMap(game: GameDesc, canvas: HTMLCanvasElement, width: Int, height: Int) {
+case class GameMap(game: GameDesc, playerName: String, canvas: HTMLCanvasElement, width: Int, height: Int) {
   println(s"Game ${game.id} starting...")
   val tileSize = (128, 111)
   val tileOffset = 32
@@ -85,16 +85,17 @@ case class GameMap(game: GameDesc, canvas: HTMLCanvasElement, width: Int, height
       case Some((timeStamp, x, y)) if e.timeStamp - timeStamp < 500 && e.clientX - x < 5 && e.clientY - y < 5 =>
         //        println(s"click ${e.clientX}:${e.clientY}")
         val pos = calcHex((e.clientX.toInt, e.clientY.toInt))
-        gameStats = gameStats.copy(players = gameStats.players.map(player => {
-          player.copy(villages = player.villages :+ pos)
-        }))
+
+        updater.send(BuildVillage(game.id, playerName, pos._1, pos._2))
+      //        gameStats = gameStats.copy(players = gameStats.players.map(player => {
+      //          player.copy(villages = player.villages :+ pos)
+      //        }))
       case _ =>
     }
     mouseDown = None
   }
 
   canvas.onmouseleave = canvas.onmouseup
-
 
 
   def drawScoreboard(ctx: Dynamic): Unit = {
@@ -175,6 +176,10 @@ case class GameMap(game: GameDesc, canvas: HTMLCanvasElement, width: Int, height
     case GameMapUpdate(cells) =>
       terrains = cells.map(mc => (mc.x, mc.y) -> mc.terrain).toMap
       println("map updated")
+    case VillageBuilt(x, y) =>
+      gameStats = gameStats.copy(players = gameStats.players.map(player => {
+        player.copy(villages = player.villages :+(x, y))
+      }))
     case packet => println(packet)
   }
 }

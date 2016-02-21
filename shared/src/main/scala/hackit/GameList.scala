@@ -1,3 +1,3 @@
 package hackit
 
-case class GameList(games: Seq[GameShort])
+case class GameList(games: Seq[GameDesc])

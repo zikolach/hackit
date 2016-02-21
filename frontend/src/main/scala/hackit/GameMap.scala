@@ -1,16 +1,23 @@
 package hackit
 
+import org.scalajs.dom
 import org.scalajs.dom.document._
-import org.scalajs.dom.window
 import org.scalajs.dom.raw.{HTMLCanvasElement, HTMLDivElement, HTMLImageElement, MouseEvent}
+import org.scalajs.dom.{WebSocket, window}
 
 import scala.language.postfixOps
 import scala.scalajs.js.Dynamic
 import scala.util.Random
 
-case class GameMap(canvas: HTMLCanvasElement, width: Int, height: Int) {
+case class GameMap(game: GameDesc, canvas: HTMLCanvasElement, width: Int, height: Int) {
+  println(s"Game ${game.id} starting...")
   val tileSize = (128, 111)
   val tileOffset = 32
+
+  val updater = new Updater {
+    val wsProtocol = if (dom.document.location.protocol == "https:") "wss" else "ws"
+    val ws: WebSocket = new WebSocket(s"$wsProtocol://${dom.document.location.host}/api/updates/${game.id}")
+  }
 
   var gameStats = GameStats(Random.alphanumeric.take(10).mkString, 0, Seq(PlayerStats("red", Seq.empty, Seq.empty)))
 
@@ -24,8 +31,7 @@ case class GameMap(canvas: HTMLCanvasElement, width: Int, height: Int) {
 
   val tiles = getElementsByClassName("tiles").asInstanceOf[HTMLDivElement]
 
-  private val terrainNames = "grass" :: "tree" :: "mountain" :: "sea" :: Nil
-  private val settlementNames = "village" :: "fort" :: Nil
+  import Settings._
 
   val textures: Map[String, HTMLImageElement] = (terrainNames ++ settlementNames).map { name =>
     val img = createElement("img").asInstanceOf[HTMLImageElement]
@@ -51,7 +57,8 @@ case class GameMap(canvas: HTMLCanvasElement, width: Int, height: Int) {
     img
   }
 
-  val terrains: Map[(Int, Int), String] = generateTerrain
+  var terrains: Map[(Int, Int), String] = Map.empty
+
   var highlightedTile: Option[(Int, Int)] = None
 
   var mouseDown: Option[(Double, Int, Int)] = None
@@ -88,13 +95,7 @@ case class GameMap(canvas: HTMLCanvasElement, width: Int, height: Int) {
 
   canvas.onmouseleave = canvas.onmouseup
 
-  private def generateTerrain: Map[(Int, Int), String] = {
-    (for {
-      x <- 0 to width
-      y <- 0 to height
-      kind = terrainNames(Random.nextInt(terrainNames.size))
-    } yield (x, y) -> kind).toMap
-  }
+
 
   def drawScoreboard(ctx: Dynamic): Unit = {
     val centerX = canvas.width / 2
@@ -150,6 +151,7 @@ case class GameMap(canvas: HTMLCanvasElement, width: Int, height: Int) {
   }
 
   private def drawTerrain(ctx: Dynamic): Unit = {
+    println("render")
     terrains.foreach { tile =>
       val pos = calcOffset(tile._1)
       ctx.drawImage(textures(tile._2), pos._1, pos._2)
@@ -167,5 +169,12 @@ case class GameMap(canvas: HTMLCanvasElement, width: Int, height: Int) {
       case _ =>
 
     }
+  }
+
+  updater.recv {
+    case GameMapUpdate(cells) =>
+      terrains = cells.map(mc => (mc.x, mc.y) -> mc.terrain).toMap
+      println("map updated")
+    case packet => println(packet)
   }
 }

@@ -1,15 +1,17 @@
 package hackit.services
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.ws.{TextMessage, Message}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.pattern._
-import akka.stream.ActorMaterializer
+import akka.stream.{OverflowStrategy, ActorMaterializer}
+import akka.stream.scaladsl.{Source, Sink, Flow}
 import akka.util.Timeout
 import hackit.actors.GameMaster
-import hackit.actors.GameMaster.ListGames
-import hackit.commands.CreateGame
-import hackit.{GameList, GameShort, Status}
+import hackit.actors.GameMaster._
+import hackit.commands.{JoinGame, CreateGame}
+import hackit._
 import upickle.default._
 
 import scala.concurrent.duration._
@@ -31,34 +33,52 @@ class HttpService(implicit system: ActorSystem, materializer: ActorMaterializer)
       path("frontend-fastopt.js")(getFromResource("frontend-fastopt.js")) ~
       getFromResourceDirectory("web") ~
       pathPrefix("api") {
-        get {
-          pathSuffix("status") {
-            complete {
-              write(Status("ok"))
-            }
-          }
-        } ~
-          path("games") {
-            get {
+        extractClientIP { clientIP =>
+          get {
+            pathSuffix("status") {
               complete {
-                val listFuture = (gameMaster ? ListGames).mapTo[GameList]
-                listFuture.map { list =>
-                  write(list)
-                }
+                write(Status("ok"))
               }
-            } ~
-            post {
-              entity(as[String]) { body =>
-                complete {
-                  val gameCreateCommand = read[CreateGame](body)
-                  val gameFuture = (gameMaster ? CreateGame).mapTo[GameShort]
-                  gameFuture.map { game =>
-                    write(game)
+            }
+          } ~
+            pathPrefix("games") {
+              pathEndOrSingleSlash {
+                get {
+                  complete {
+                    val listFuture = (gameMaster ? ListGames).mapTo[GameList]
+                    listFuture.map { list =>
+                      write(list)
+                    }
+                  }
+                } ~
+                  (post & entity(as[String])) { body =>
+                    complete {
+                      val gameCreateCommand = read[CreateGame](body)
+                      (gameMaster ? gameCreateCommand).mapTo[GameDesc].map { game => write(game) }
+                    }
+
+                  }
+              } ~
+                pathPrefix(Segment) { gameId =>
+                  (path("join") & post & entity(as[String])) { body =>
+                    complete {
+                      val gameJoinCommand = read[JoinGame](body)
+                      (gameMaster ? gameJoinCommand).mapTo[GameDesc].map { game => write(game) }
+                    }
                   }
                 }
-              }
+            } ~
+            path("updates" / Segment) { gameId =>
+              val in = Flow[GameMessage].to(Sink.actorRef[GameMessage](gameMaster, GameDisconnected(clientIP.toString())))
+              val out = Source.actorRef[Packet](1, OverflowStrategy.fail)
+                .mapMaterializedValue(gameMaster ! GameConnected(gameId, clientIP.toString(), _))
+              handleWebsocketMessages(Flow[Message]
+                .collect { case TextMessage.Strict(msg) => GameUpdate(read[Packet](msg)) }
+                .via(Flow.fromSinkAndSource(in, out))
+                .map { case msg: GameMapUpdate => TextMessage.Strict(write(msg)) }
+              )
             }
-          }
+        }
       }
 
 }

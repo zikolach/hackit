@@ -1,21 +1,39 @@
 package hackit.actors
 
-import akka.actor.{Props, Actor}
-import hackit.{GameShort, GameList, GameStats}
-import hackit.actors.GameMaster.ListGames
-import hackit.commands.CreateGame
-
-import scala.util.Random
+import akka.actor.{ActorRef, Actor, Props}
+import hackit.actors.GameMaster.{GameConnected, ListGames}
+import hackit.commands.{GameNotFound, JoinGame, CreateGame}
+import hackit._
 
 class GameMaster extends Actor {
 
-  var games: Seq[GameStats] = Seq.empty
+  var games: Map[String, (GameStats, Seq[MapCell])] = Map.empty
+
+  import Settings._
 
   def receive: Receive = {
     case ListGames =>
-      sender ! GameList(games.map(game => GameShort(game.id, game.toString)))
-    case CreateGame(name) =>
-      games = games :+ GameStats(Random.alphanumeric.take(10).mkString, 0, Seq.empty)
+      sender ! GameList(games.values.map({ case (game, _) => GameDesc(game.id, game.toString) }).toSeq)
+    case CreateGame(id, playerName) =>
+      val gameStats = GameStats(id, 0, Seq(PlayerStats(playerName, Seq.empty, Seq.empty)))
+      games = games + (id ->(gameStats, generateTerrain(10, 10)))
+      sender ! GameDesc(gameStats.id, gameStats.toString)
+    case JoinGame(id, playerName) =>
+      games.get(id) match {
+        case Some((gameStats, cells)) =>
+          val newStats = gameStats.copy(players = gameStats.players :+ PlayerStats(playerName, Seq.empty, Seq.empty))
+          games = games.updated(id, (newStats, cells))
+          sender ! GameDesc(id, newStats.toString)
+        case None =>
+          sender ! GameNotFound
+      }
+    case GameConnected(gameId, ip, subscriber) =>
+      games.get(gameId) match {
+        case Some((_, cells)) =>
+          subscriber ! GameMapUpdate(cells)
+      }
+
+
   }
 }
 
@@ -26,9 +44,14 @@ object GameMaster {
 
   case object ListGames extends GameMasterCommand
 
-
   sealed trait GameMasterResponse
 
+  sealed trait GameMessage
 
+  case class GameDisconnected(ip: String) extends GameMessage
+
+  case class GameConnected(gameId: String, ip: String, subscriber: ActorRef) extends GameMessage
+
+  case class GameUpdate(packet: Packet) extends GameMessage
 
 }

@@ -1,22 +1,66 @@
 package hackit
 
+import org.scalajs.dom.ext.Ajax
+import org.scalajs.dom.raw.{Element, HTMLButtonElement, HTMLDivElement}
 import org.scalajs.dom.{MouseEvent, document}
-import org.scalajs.dom.raw.HTMLButtonElement
+import upickle.default._
+
+import scala.scalajs.concurrent.JSExecutionContext.Implicits
 
 class GameMenu {
 
-  var onStartHandlerOpt: Option[() => Unit] = None
+  import Implicits.queue
+
+  val mainMenu = document.createElement("div").asInstanceOf[HTMLDivElement]
+  mainMenu.id = "main-menu"
+
+  var onCreateHandlerOpt: Option[() => Unit] = None
+  var onJoinHandlerOpt: Option[String => Unit] = None
 
   val btn = document.createElement("button").asInstanceOf[HTMLButtonElement]
   btn.innerHTML = "Start"
+  btn.id = "start"
   btn.onclick = (e: MouseEvent) => {
-    document.body.removeChild(btn)
-    onStartHandlerOpt.foreach(_.apply())
+    onCreateHandlerOpt.foreach(_ ())
   }
-  document.body.appendChild(btn)
+  mainMenu.appendChild(btn)
 
-  def onStart(handler: () => Unit): Unit = {
-    onStartHandlerOpt = Some(handler)
+  document.body.appendChild(mainMenu)
+
+  def onCreate(handler: () => Unit): Unit = {
+    onCreateHandlerOpt = Some(handler)
   }
 
+  def onJoin(handler: String => Unit): Unit = {
+    onJoinHandlerOpt = Some(handler)
+  }
+
+  def cleanup(): Unit = {
+    val mm = document.getElementById("main-menu")
+    mm.parentNode.removeChild(mm)
+  }
+
+  def refreshGames(list: GameList): Unit = {
+    val gameList = Option(document.getElementById("game-list").asInstanceOf[HTMLDivElement])
+      .getOrElse(document.createElement("div").asInstanceOf[HTMLDivElement])
+
+    gameList.id = "game-list"
+
+    list.games.foreach { game =>
+      Option(document.getElementById(game.id).asInstanceOf[HTMLDivElement])
+        .getOrElse({
+          val newItem = document.createElement("div").asInstanceOf[HTMLDivElement]
+          newItem.id = game.id
+          newItem.innerHTML = game.id
+          gameList.insertBefore(newItem, gameList.firstChild)
+          val joinButton = document.createElement("button").asInstanceOf[HTMLButtonElement]
+          joinButton.onclick = (e: MouseEvent) => {
+            onJoinHandlerOpt.foreach(_ (game.id))
+          }
+          newItem.appendChild(joinButton)
+          newItem
+        })
+    }
+    mainMenu.appendChild(gameList)
+  }
 }
